@@ -1,8 +1,10 @@
 use clap::Args;
 use clap::CommandFactory;
 use clap::Parser;
+use clap::ValueEnum;
 use clap_complete::Shell;
 use clap_complete::generate;
+use clap_complete_nushell::Nushell;
 use codex_app_server_daemon::BootstrapOptions as AppServerBootstrapOptions;
 use codex_app_server_daemon::LifecycleCommand as AppServerLifecycleCommand;
 use codex_app_server_daemon::RemoteControlMode as AppServerRemoteControlMode;
@@ -229,11 +231,20 @@ enum Subcommand {
     Features(FeaturesCli),
 }
 
+#[derive(Debug, Clone, Copy, ValueEnum)]
+enum CompletionShell {
+    Bash,
+    Elvish,
+    Fish,
+    Powershell,
+    Zsh,
+    Nushell,
+}
 #[derive(Debug, Parser)]
 struct CompletionCommand {
     /// Shell to generate completions for
-    #[clap(value_enum, default_value_t = Shell::Bash)]
-    shell: Shell,
+    #[clap(value_enum, default_value_t = CompletionShell::Bash)]
+    shell: CompletionShell,
 }
 
 #[derive(Debug, Parser)]
@@ -2831,7 +2842,26 @@ fn merge_interactive_cli_flags(interactive: &mut TuiCli, subcommand_cli: TuiCli)
 fn print_completion(cmd: CompletionCommand) {
     let mut app = MultitoolCli::command();
     let name = "codex";
-    generate(cmd.shell, &mut app, name, &mut std::io::stdout());
+    match cmd.shell {
+        CompletionShell::Bash => {
+            generate(Shell::Bash, &mut app, name, &mut std::io::stdout());
+        }
+        CompletionShell::Elvish => {
+            generate(Shell::Elvish, &mut app, name, &mut std::io::stdout());
+        }
+        CompletionShell::Fish => {
+            generate(Shell::Fish, &mut app, name, &mut std::io::stdout());
+        }
+        CompletionShell::Powershell => {
+            generate(Shell::PowerShell, &mut app, name, &mut std::io::stdout());
+        }
+        CompletionShell::Zsh => {
+            generate(Shell::Zsh, &mut app, name, &mut std::io::stdout());
+        }
+        CompletionShell::Nushell => {
+            generate(Nushell, &mut app, name, &mut std::io::stdout());
+        }
+    }
 }
 
 #[cfg(test)]
